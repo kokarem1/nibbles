@@ -17,6 +17,19 @@ middleCell = fieldIndex middleH middleV
 
 snake = [middleCell, middleCell - 1, middleCell - 2]
 
+newDirection direction shift = case shift of
+                                 0 -> direction
+                                 1 -> case direction of
+                                        1 -> 2
+                                        2 -> 3
+                                        3 -> 4
+                                        4 -> 1
+                                 2 -> case direction of
+                                        1 -> 4
+                                        2 -> 1
+                                        3 -> 2
+                                        4 -> 3
+
 apple snake_l = makeAppleList !! head (randomRs (0,aLength-1) (mkStdGen $ foldl (+) 0 snake_l) :: [Int])
   where
     aLength = cellsCount-(length snake_l)
@@ -34,3 +47,4 @@ field snake_l = [paintSnakeCell cell_v | cell_v <- gen_l]
       | cell_v == head snake_l = 1
       | elem cell_v snake_l = 2
       | otherwise = 0
+
