@@ -1,6 +1,7 @@
 module GameLogics where
 
 import System.Random
+import System.IO.Unsafe
 
 horizontalCellsCount = 10
 verticalCellsCount = 10
@@ -12,6 +13,8 @@ middleV = verticalCellsCount `div` 2
 matrixIndex row_i col_i col_size = row_i * col_size + col_i
 
 fieldIndex row_i col_i = matrixIndex row_i col_i verticalCellsCount
+
+listIndex i = (i `div` verticalCellsCount, i `rem` verticalCellsCount)
 
 middleCell = fieldIndex middleH middleV
 
@@ -30,8 +33,22 @@ newDirection direction shift = case shift of
                                         3 -> 2
                                         4 -> 3
 
-apple snake_l = makeAppleList !! head (randomRs (0,aLength-1) (mkStdGen $ foldl (+) 0 snake_l) :: [Int])
+moveSnake direction shift growing snake_l = do
+  let snakeTail = take (length snake_l - 1) snake_l
+  let snakeHead = head snake_l
+  let row_i = fst $ listIndex snakeHead
+  let col_i = snd $ listIndex snakeHead
+  let finalDirection = newDirection direction shift
+  let snakeNewHead = case finalDirection of
+                       1 -> fieldIndex (row_i - 1) col_i
+                       2 -> fieldIndex row_i (col_i + 1)
+                       3 -> fieldIndex (row_i + 1) col_i
+                       4 -> fieldIndex row_i (col_i - 1)
+  if growing then [snakeNewHead]++snake_l else [snakeNewHead]++snakeTail
+
+apple snake_l = makeAppleList !! randomMy (aLength-1)
   where
+    randomMy leng = unsafePerformIO (randomRIO(0,leng))
     aLength = cellsCount-(length snake_l)
     makeAppleList = fillAppleList [0..aLength-1] 0
     fillAppleList [] _ = []
