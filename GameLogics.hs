@@ -39,12 +39,12 @@ newDirection4Keys direction newDir = case direction of
                                        3 -> if newDir == 1 then direction else newDir
                                        4 -> if newDir == 2 then direction else newDir
 
-moveSnake direction shift growing snake_l = do
+moveSnake direction shift keys4 growing snake_l = do
   let snakeTail = take (length snake_l - 1) snake_l
   let snakeHead = head snake_l
   let row_i = fst $ listIndex snakeHead
   let col_i = snd $ listIndex snakeHead
-  let finalDirection = newDirection direction shift
+  let finalDirection = if keys4 then (newDirection4Keys direction shift) else (newDirection direction shift)
   let snakeNewHead = case finalDirection of
                        1 -> fieldIndex (row_i - 1) col_i
                        2 -> fieldIndex row_i (col_i + 1)
