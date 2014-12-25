@@ -50,12 +50,11 @@ apple snake_l = makeAppleList !! randomMy (aLength-1)
   where
     randomMy leng = unsafePerformIO (randomRIO(0,leng))
     aLength = cellsCount-(length snake_l)
-    makeAppleList = fillAppleList [0..aLength-1] 0
-    fillAppleList [] _ = []
-    fillAppleList (a:pple) i
-       | aLength + i == cellsCount = a:pple
-       | (filter (==a) snake_l == []) = a : fillAppleList pple i
-       | otherwise = (aLength + i) : fillAppleList pple (i+1)
+    makeAppleList = fillAppleList [0..cellsCount-1]
+    fillAppleList [] = []
+    fillAppleList (a:pple)
+       | (filter (==a) snake_l == []) = a : fillAppleList pple
+       | otherwise = fillAppleList pple
 
 field snake_l = [paintSnakeCell cell_v | cell_v <- gen_l]
   where
