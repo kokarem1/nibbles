@@ -32,12 +32,13 @@ newDirection direction shift = case shift of
                                         2 -> 1
                                         3 -> 2
                                         4 -> 3
-                                        
-newDirection4Keys direction newDir = case direction of
-                                       1 -> if newDir == 3 then direction else newDir
-                                       2 -> if newDir == 4 then direction else newDir
-                                       3 -> if newDir == 1 then direction else newDir
-                                       4 -> if newDir == 2 then direction else newDir
+
+newDirection4Keys direction newDir = case newDir of
+                                       0 -> direction
+                                       1 -> if direction == 3 then direction else newDir
+                                       2 -> if direction == 4 then direction else newDir
+                                       3 -> if direction == 1 then direction else newDir
+                                       4 -> if direction == 2 then direction else newDir
 
 moveSnake direction shift keys4 growing snake_l = do
   let snakeTail = take (length snake_l - 1) snake_l
