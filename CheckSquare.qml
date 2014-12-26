@@ -14,6 +14,7 @@ Rectangle {
         anchors.centerIn: parent
         font.pixelSize: (9/10) * parent.height
         text: "✓"
+        visible: checked
         color: "darkblue"
     }
 
@@ -22,7 +23,6 @@ Rectangle {
 
         onClicked: {
             checked = ! checked
-            text.visible = checked
         }
     }
 }

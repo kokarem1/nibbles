@@ -53,15 +53,17 @@ moveSnake direction shift keys4 growing snake_l = do
                        4 -> fieldIndex row_i (col_i - 1)
   if growing then [snakeNewHead]++snake_l else [snakeNewHead]++snakeTail
 
-apple snake_l = makeAppleList !! randomMy (aLength-1)
-  where
-    randomMy leng = unsafePerformIO (randomRIO(0,leng))
-    aLength = cellsCount-(length snake_l)
-    makeAppleList = fillAppleList [0..cellsCount-1]
-    fillAppleList [] = []
-    fillAppleList (a:pple)
-       | (filter (==a) snake_l == []) = a : fillAppleList pple
-       | otherwise = fillAppleList pple
+apple snake_l = do
+  let randomCell = randomMy (aLength-1)
+  if (randomCell < 0 || randomCell > (cellsCount - 2)) then (-1) else makeAppleList !! randomCell
+    where
+      randomMy leng = unsafePerformIO (randomRIO(0,leng))
+      aLength = cellsCount-(length snake_l)
+      makeAppleList = fillAppleList [0..cellsCount-1]
+      fillAppleList [] = []
+      fillAppleList (a:pple)
+         | (filter (==a) snake_l == []) = a : fillAppleList pple
+         | otherwise = fillAppleList pple
 
 field snake_l = [paintSnakeCell cell_v | cell_v <- gen_l]
   where

@@ -1,16 +1,57 @@
 import QtQuick 2.0
+import "GameEngine.js" as GameEngine
 
 Rectangle {
 
-    property int horizontalCellsCount: 10 // Not correct, ...
-    property int verticalCellsCount: 10   // ... should be set in Haskell code // Something bad if 10:100 statusBar text
+    //property int horizontalCellsCount: 10 // Not correct, ...
+    //property int verticalCellsCount: 10   // ... should be set in Haskell code // Something bad if 10:100 statusBar text
 
-    property int widthResolution: 500
-    property int heightResolution: 500
+    property int widthResolution: 600
+    property int heightResolution: 600
 
-    property string scoreText: "Score: 0"
-    property string speedText: "Speed: " + 1
-    property string newSpeedText: "Speed: " + 2
+    property int scoreValue: 0
+    property int speedValue: 3
+    property int newSpeedValue: speedValue
+
+    property string scoreText: "Score: " + scoreValue
+    property string speedText: "Speed: " + speedValue
+    property string newSpeedText: "Speed: " + newSpeedValue
+
+    property bool splashScreen: true
+
+    function incScore()
+    {
+        scoreValue += GameEngine.SCORE_SHIFT
+    }
+
+    function changeSpeed(isInc)
+    {
+        if (isInc && newSpeedValue < 10)
+            ++newSpeedValue;
+        else if ( ! isInc && newSpeedValue > 1)
+            --newSpeedValue;
+    }
+
+    function initNewGame()
+    {
+        speedValue = newSpeedValue
+        GameEngine.gameOverState = false
+        GameEngine.nextGrowing = false
+        GameEngine.game = createGame()
+        gameTimer.restart()
+        splashScreen = false
+        statusBarRow.state = ""
+        gameOverRectangle.state = ""
+        scoreValue = 0
+        scoreCaptionSB.visible = true
+        speedCaptionSB.visible = true
+        spacerRect.visible = true
+        newGameButton.visible = false
+        upDownButtons.visible = false
+        newSpeedCaptionSB.visible = false
+        settingsButton.visible = false
+        statusBarRow.spacing = statusBar.width / 8
+    }
 
     function calculateCellSize()
     {
@@ -54,10 +95,18 @@ Rectangle {
                         height: cellSize
 
                         color:
-                            if (column)
+                            if (value == 0)
                                 "sandybrown"
-                            else
+                            else if (value == 1)
+                                "yellow"
+                            else if (value == 2)
                                 "green"
+                            else if (value == 3)
+                                "red"
+                            else if (value == -2) // GameOver effect
+                                "darkred"
+                            else if (value == -1) // Error
+                                "white"
 
                         border.width: gridCheckSquare.checked? 1: 0
                     }
@@ -68,7 +117,7 @@ Rectangle {
                 Component.onCompleted: {
                     for (var i = 0; i < verticalCellsCount; ++i)
                         for (var j = 0; j < horizontalCellsCount; ++j)
-                            listModel.append( {row: i, column: j} )
+                            listModel.append( { row: i, column: j, value: 0 } )
                 }
             }
         }
@@ -89,7 +138,7 @@ Rectangle {
             Row {
                 id: statusBarRow
                 anchors.centerIn: statusBar
-                spacing: statusOpacityTransition.running? statusBar.width / 8: statusBar.width / 20
+                spacing: statusOpacityTransition.running && ! splashScreen? statusBar.width / 8: statusBar.width / 20
 
                 Text {
                     id: scoreCaptionSB
@@ -97,21 +146,17 @@ Rectangle {
                     text: scoreText
                     font.pixelSize: statusBar.width / 20
                     font.bold: true
-                    visible: statusOpacityTransition.running
+                    visible: statusOpacityTransition.running && ! splashScreen
                 }
 
                 Rectangle {
+                    id: spacerRect
+
                     width: (3/5) * statusBar.height
                     height: width
-                    visible: statusOpacityTransition.running
+                    visible: statusOpacityTransition.running && ! splashScreen
                     border.width: 1
                     color: "sandybrown"
-                }
-
-                Component.onCompleted: {
-//                    for (var x in statusBarRow.children)
-//                        console.log(statusBarRow.children[x].visible)
-                    state = "gameover"
                 }
 
                 Text {
@@ -119,7 +164,7 @@ Rectangle {
 
                     text: speedText
                     font.pixelSize: statusBar.width / 20
-                    visible: statusOpacityTransition.running
+                    visible: statusOpacityTransition.running && ! splashScreen
                 }
 
                 Text {
@@ -131,6 +176,8 @@ Rectangle {
                 }
 
                 Rectangle {
+                    id: upDownButtons
+
                     width: statusBar.width / 22
                     height: (2/3) * statusBar.height
                     color: "transparent"
@@ -143,6 +190,7 @@ Rectangle {
                         caption.text: "▲"
 
                         mouseArea.onClicked: {
+                            changeSpeed(true)
                         }
                     }
 
@@ -153,23 +201,32 @@ Rectangle {
                         caption.text: "▼"
 
                         mouseArea.onClicked: {
+                            changeSpeed(false)
                         }
                     }
                 }
 
                 StatusBarButton {
+                    id: newGameButton
+
                     width: statusBar.width / 4
                     height: (2/3) * statusBar.height
 
                     caption.text: "New Game"
-                    visible: ! statusOpacityTransition.running
+                    visible: ! statusOpacityTransition.running || splashScreen
+
+                    mouseArea.onClicked: {
+                        initNewGame()
+                    }
                 }
 
                 StatusBarButton {
+                    id: settingsButton
+
                     height: (2/3) * statusBar.height
                     width: height
                     caption.text: "⚙"
-                    visible: ! statusOpacityTransition.running
+                    visible: ! statusOpacityTransition.running || splashScreen
 
                     mouseArea.onClicked: {
                         optionsMenu.state = "active"
@@ -186,6 +243,8 @@ Rectangle {
 
                 transitions: Transition {
                     id: statusOpacityTransition
+
+                    to: "gameover"
 
                     NumberAnimation { properties: "opacity"; easing.type: Easing.InCubic; duration: 2000 }
                 }
@@ -235,11 +294,10 @@ Rectangle {
 
         transitions: Transition {
             id: aaa
-            NumberAnimation { properties: "x"; easing.type: Easing.InCubic; duration: 500 }
-        }
 
-        Component.onCompleted: {
-            gameOverRectangle.state = "gameover"
+            to: "gameover"
+
+            NumberAnimation { properties: "x"; easing.type: Easing.InCubic; duration: 500 }
         }
     }
 
@@ -254,7 +312,7 @@ Rectangle {
         Text {
             id: textGame
             y: -canvas.height
-            font.pixelSize: 3 * gameOverRectangle.height / 7
+            font.pixelSize: 3 * gameOverRectangle.height / 8
             font.bold: true
             font.italic: true
             text: "Game"
@@ -266,6 +324,8 @@ Rectangle {
             }
 
             transitions: Transition {
+                to: "gameover"
+
                 NumberAnimation { properties: "y"; easing.type: Easing.OutBounce; duration: 600 }
             }
         }
@@ -273,19 +333,22 @@ Rectangle {
         Text {
             id: textOver
             x: -canvas.width - parent.x
-            font.pixelSize: 3 * gameOverRectangle.height / 7
+            font.pixelSize: 3 * gameOverRectangle.height / 8
             font.bold: true
             font.italic: true
             text: "Over"
             color: "white"
 
             states: State {
-                name: "gameover"; when: (! aaa.running)
+                name: "gameover"; when: (! aaa.running && GameEngine.gameOverState) && ! splashScreen
                 PropertyChanges { target: textOver; x: textGame.width + parent.wordSpacing; }
             }
 
             transitions: Transition {
                 id: bbb
+
+                to: "gameover"
+
                 NumberAnimation { properties: "x"; easing.type: Easing.OutElastic; duration: 900 }
             }
         }
@@ -310,6 +373,7 @@ Rectangle {
 
         Column {
             anchors.centerIn: optionsMenu
+            spacing: optionsMenu.height / 26
 
             Row {
                 height: optionsMenu.height / 16
@@ -323,6 +387,23 @@ Rectangle {
                     font.pixelSize: parent.height
                     color: "darkblue"
                     text: "Grid"
+                }
+            }
+
+            Row {
+                height: optionsMenu.height / 16
+                spacing: height / 3
+
+                CheckSquare {
+                    id: twoKeysCheckSquare
+
+                    checked: false
+                }
+
+                Text {
+                    font.pixelSize: parent.height
+                    color: "darkblue"
+                    text: "2-keys control"
                 }
             }
         }
@@ -349,5 +430,85 @@ Rectangle {
         transitions: Transition {
             NumberAnimation { properties: "y"; easing.type: Easing.Linear; duration: 300}
         }
+    }
+
+    property bool isPres: false
+
+    Keys.onPressed: {
+        if (GameEngine.gameOverState)
+            return
+        if ( ! isPres)
+        {
+            var moveRight = event.key == Qt.Key_Right || event.key == Qt.Key_D;
+            var moveLeft = event.key == Qt.Key_Left || event.key == Qt.Key_A;
+            var moveUp = event.key == Qt.Key_Up || event.key == Qt.Key_W;
+            var moveDown = event.key == Qt.Key_Down || event.key == Qt.Key_S;
+
+            var choice;
+            if ( ! twoKeysCheckSquare.checked)
+            {
+                if (moveRight)
+                    choice = 2
+                else if (moveLeft)
+                    choice = 4
+                else if (moveUp)
+                    choice = 1
+                else if (moveDown)
+                    choice = 3
+            }
+            else
+            {
+                if (moveRight)
+                    choice = 1
+                else if (moveLeft)
+                    choice = 2
+            }
+
+            GameEngine.changeGameState(choice, twoKeysCheckSquare.checked)
+        }
+        isPres = true
+    }
+
+    Timer {
+        id: gameTimer
+
+        interval: newSpeedValue * 100
+        running: false
+        repeat: true
+
+        onTriggered: {
+            if ( ! isPres)
+                GameEngine.changeGameState(0, twoKeysCheckSquare.checked)
+            isPres = false
+            if (GameEngine.gameOverState)
+            {
+                gameOverFunc()
+                return
+            }
+            if (GameEngine.nextGrowing)
+                incScore()
+            for (var i = 0; i < verticalCellsCount * horizontalCellsCount; ++i)
+                listModel.get(i).value = GameEngine.game.field[i]
+            if (GameEngine.game.apple() != -1)
+                listModel.get( GameEngine.game.apple() ).value = 3
+            listModel.get( GameEngine.game.head() ).value = 1
+        }
+    }
+
+    function gameOverFunc()
+    {
+        gameTimer.stop()
+        listModel.set( GameEngine.game.head(), {value: -2} )
+        statusBarRow.state = "gameover"
+        gameOverRectangle.state = "gameover"
+
+        scoreCaptionSB.visible = false
+        speedCaptionSB.visible = false
+        spacerRect.visible = false
+        newGameButton.visible = true
+        upDownButtons.visible = true
+        newSpeedCaptionSB.visible = true
+        settingsButton.visible = true
+        statusBarRow.spacing = statusBar.width / 20
     }
 }
