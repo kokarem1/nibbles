@@ -55,7 +55,8 @@ moveSnake direction shift keys4 growing snake_l = do
 
 apple snake_l = do
   let randomCell = randomMy (aLength-1)
-  if (randomCell < 0 || randomCell > (cellsCount - 2)) then (-1) else makeAppleList !! randomCell
+  let aList = makeAppleList
+  if (aList == []) then (-1) else makeAppleList !! randomCell
     where
       randomMy leng = unsafePerformIO (randomRIO(0,leng))
       aLength = cellsCount-(length snake_l)
